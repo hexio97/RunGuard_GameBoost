@@ -218,6 +218,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm christitus.com/win |
 echo.
 if "%LANG%"=="RO" (set _BACK=  Apasa ENTER pentru a te intoarce la meniu  /  N = Iesire: ) else (set _BACK=  Press ENTER to go back to menu  /  N = Exit: )
 set /p BACK_CHOICE=%_BACK%
+set BACK_CHOICE=!BACK_CHOICE: =!
 if /i "!BACK_CHOICE!"=="N" exit /b 0
 goto :PROFILE_LOOP
 :AFTER_WINUTIL
@@ -242,6 +243,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://get.activate
 echo.
 if "%LANG%"=="RO" (set _BACK=  Apasa ENTER pentru a te intoarce la meniu  /  N = Iesire: ) else (set _BACK=  Press ENTER to go back to menu  /  N = Exit: )
 set /p BACK_CHOICE=%_BACK%
+set BACK_CHOICE=!BACK_CHOICE: =!
 if /i "!BACK_CHOICE!"=="N" exit /b 0
 goto :PROFILE_LOOP
 :AFTER_ACTIVATE
@@ -265,6 +267,7 @@ if "%LANG%"=="RO" (echo  [OK] Ninite.com deschis in browser.) else (echo  [OK] N
 echo.
 if "%LANG%"=="RO" (set _BACK=  Apasa ENTER pentru a te intoarce la meniu  /  N = Iesire: ) else (set _BACK=  Press ENTER to go back to menu  /  N = Exit: )
 set /p BACK_CHOICE=%_BACK%
+set BACK_CHOICE=!BACK_CHOICE: =!
 if /i "!BACK_CHOICE!"=="N" exit /b 0
 goto :PROFILE_LOOP
 :AFTER_NINITE
@@ -299,7 +302,10 @@ echo   %S_ALREADY1%
 echo   %S_ALREADY_RUN%: %PREV_DATE%
 echo.
 set /p RERUN_CHOICE=  Rulezi din nou / Run again? [1=Da/Yes  2=Exit]:
+set RERUN_CHOICE=!RERUN_CHOICE: =!
 if "!RERUN_CHOICE!"=="2" exit /b 0
+if "!RERUN_CHOICE!"=="n" exit /b 0
+if "!RERUN_CHOICE!"=="N" exit /b 0
 :SKIP_RERUN
 
 :: ============================================================
@@ -645,7 +651,7 @@ if "%RUN_14%"=="0" (
 call :PROGRESS 14 %S_14%
 bcdedit /timeout 3 >nul 2>&1
 bcdedit /debug off >nul 2>&1
-if defined CPU_CORES bcdedit /set numproc %CPU_CORES% >nul 2>&1
+if defined CPU_THREADS bcdedit /set numproc %CPU_THREADS% >nul 2>&1
 if "%LANG%"=="RO" (echo  [OK] Boot optimizat - timeout 3s, toate %CPU_CORES% core-urile la startup.) else (echo  [OK] Boot optimized - timeout 3s, all %CPU_CORES% cores at startup.)
 echo [%time%] [%PROFILE%] Step 14 - Boot >> "%LOGFILE%"
 :AFTER14
@@ -829,11 +835,18 @@ if "%RUN_23%"=="0" (
     goto :AFTER23
 )
 call :PROGRESS 23 %S_23%
+set GAME_PRIO=5
+if %CPU_CORES% LEQ 4 set GAME_PRIO=4
 for %%g in (csgo.exe cs2.exe valorant.exe VALORANT-Win64-Shipping.exe League_of_Legends.exe LeagueClient.exe javaw.exe Minecraft.exe Warzone.exe r5apex.exe RainbowSix.exe FortniteClient-Win64-Shipping.exe dota2.exe overwatch.exe overwatch2.exe) do (
-    reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%%g\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f >nul 2>&1
+    reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%%g\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d !GAME_PRIO! /f >nul 2>&1
     reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%%g\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f >nul 2>&1
 )
+if %CPU_CORES% LEQ 4 goto :PRIO23_LOW
 if "%LANG%"=="RO" (echo  [OK] Prioritate HIGH setata pentru: CS:GO, CS2, Valorant, LoL, Minecraft, Warzone, Apex, R6, Fortnite, Dota2, OW.) else (echo  [OK] HIGH priority set for: CS:GO, CS2, Valorant, LoL, Minecraft, Warzone, Apex, R6, Fortnite, Dota2, OW.)
+goto :PRIO23_END
+:PRIO23_LOW
+if "%LANG%"=="RO" (echo  [OK] Prioritate ABOVE_NORMAL setata - CPU cu %CPU_CORES% core-uri detectat.) else (echo  [OK] ABOVE_NORMAL priority set - %CPU_CORES%-core CPU detected.)
+:PRIO23_END
 echo [%time%] [%PROFILE%] Step 23 - Game Priority >> "%LOGFILE%"
 :AFTER23
 
@@ -853,7 +866,7 @@ del /q /f /s "%LOCALAPPDATA%\AMD\DxCache\*" >nul 2>&1
 del /q /f /s "%LOCALAPPDATA%\AMD\GLCache\*" >nul 2>&1
 del /q /f /s "%LOCALAPPDATA%\D3DSCache\*" >nul 2>&1
 for /d %%i in ("C:\Program Files (x86)\Steam\steamapps\shadercache\*") do del /q /f /s "%%i\*" >nul 2>&1
-if "%LANG%"=="RO" (echo  [OK] Shader cache GPU curatat - recompilare curata la urmatoarea lansare.) else (echo  [OK] GPU shader cache cleared - fresh recompile on next game launch.)
+if "%LANG%"=="RO" (echo  [OK] Shader cache curatat - util dupa update driver. Primul launch al jocului va recompila ^(normal^).) else (echo  [OK] Shader cache cleared - useful after driver update. First game launch will recompile ^(normal^).)
 echo [%time%] [%PROFILE%] Step 24 - Shader Cache >> "%LOGFILE%"
 :AFTER24
 
@@ -942,12 +955,16 @@ if "%RUN_27%"=="0" (
     goto :AFTER27
 )
 call :PROGRESS 27 %S_27%
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\cs2.exe\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f >nul 2>&1
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\VALORANT-Win64-Shipping.exe\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f >nul 2>&1
+:: Seteaza afinitate CPU: jocurile folosesc toate thread-urile logice disponibile
+for %%g in (csgo.exe cs2.exe valorant.exe VALORANT-Win64-Shipping.exe League_of_Legends.exe LeagueClient.exe Warzone.exe r5apex.exe RainbowSix.exe FortniteClient-Win64-Shipping.exe dota2.exe overwatch.exe overwatch2.exe) do (
+    reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%%g\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 5 /f >nul 2>&1
+    reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\%%g\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f >nul 2>&1
+)
+:: Asigura ca planul de alimentare foloseste toate thread-urile logice
 powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100 >nul 2>&1
 powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100 >nul 2>&1
 powercfg /setactive SCHEME_CURRENT >nul 2>&1
-if "%LANG%"=="RO" (echo  [OK] CPU affinity optimizat - jocurile primesc core-uri dedicate.) else (echo  [OK] CPU affinity optimized - games get dedicated cores.)
+if "%LANG%"=="RO" (echo  [OK] CPU affinity optimizat - HIGH priority pe toate jocurile + toate %CPU_THREADS% threaduri active.) else (echo  [OK] CPU affinity optimized - HIGH priority on all games + all %CPU_THREADS% threads active.)
 echo [%time%] [%PROFILE%] Step 27 - CPU Affinity >> "%LOGFILE%"
 :AFTER27
 
@@ -1069,6 +1086,7 @@ echo  ============================================================
 echo.
 if "%LANG%"=="RO" (set _BACK=  Apasa ENTER pentru a te intoarce la meniu  /  N = Iesire: ) else (set _BACK=  Press ENTER to go back to menu  /  N = Exit: )
 set /p BACK_CHOICE=%_BACK%
+set BACK_CHOICE=!BACK_CHOICE: =!
 if /i "!BACK_CHOICE!"=="N" exit /b 0
 goto :PROFILE_LOOP
 

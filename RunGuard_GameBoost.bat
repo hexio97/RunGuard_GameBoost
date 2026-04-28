@@ -34,9 +34,9 @@ echo.
 echo   [1]  English
 echo   [2]  Romana
 echo.
-set /p LANG_CHOICE="  Choice / Alegere (1 or 2): "
+choice /C 12 /N /M "  Choice / Alegere (1 or 2): "
 set LANG=EN
-if "%LANG_CHOICE%"=="2" set LANG=RO
+if errorlevel 2 set LANG=RO
 
 :: ============================================================
 :: STRING DEFINITIONS
@@ -174,6 +174,7 @@ if "%LANG%"=="RO" (
     echo.
     echo   [4]  WINUTIL  - Chris Titus WinUtil ^(bloatware, reparare^)
     echo   [5]  NINITE   - Instaleaza programe gratuite rapid
+    echo   [6]  ACTIVATE - Microsoft Activation Scripts ^(Windows/Office^)
     echo.
 ) else (
     echo  ============================================================
@@ -205,16 +206,17 @@ if "%LANG%"=="RO" (
     echo.
     echo   [4]  WINUTIL  - Chris Titus WinUtil ^(bloatware, repair^)
     echo   [5]  NINITE   - Quickly install free programs
+    echo   [6]  ACTIVATE - Microsoft Activation Scripts ^(Windows/Office^)
     echo.
 )
-set PROF_CHOICE=2
-set /p PROF_CHOICE=  Alegere / Choice [1/2/3/4/5, Enter=BALANCED]:
-set PROF_CHOICE=%PROF_CHOICE: =%
+choice /C 123456 /N /M "  Alegere / Choice [1/2/3/4/5/6]: "
+set PROF_EL=%errorlevel%
 set PROFILE=BALANCED
-if "%PROF_CHOICE%"=="1" set PROFILE=SAFE
-if "%PROF_CHOICE%"=="3" set PROFILE=EXTREME
-if "%PROF_CHOICE%"=="4" set PROFILE=WINUTIL
-if "%PROF_CHOICE%"=="5" set PROFILE=NINITE
+if "%PROF_EL%"=="1" set PROFILE=SAFE
+if "%PROF_EL%"=="3" set PROFILE=EXTREME
+if "%PROF_EL%"=="4" set PROFILE=WINUTIL
+if "%PROF_EL%"=="5" set PROFILE=NINITE
+if "%PROF_EL%"=="6" set PROFILE=ACTIVATE
 echo Profil ales: %PROFILE% >> "%LOGFILE%"
 
 :: ---- WARNING EXTREME ----
@@ -283,14 +285,11 @@ if "%LANG%"=="RO" (
     echo   [3]  Back to menu
     echo.
 )
-set EW=1
-set /p EW=  Alegere / Choice [1/2/3]:
-set EW=!EW: =!
-if "!EW!"=="2" set PROFILE=BALANCED
-if "!EW!"=="3" goto :PROFILE_LOOP
-if "!EW!"=="2" goto :AFTER_EXTREME_WARN
-if "!EW!"=="1" goto :AFTER_EXTREME_WARN
-goto :PROFILE_LOOP
+choice /C 123 /N /M "  Alegere / Choice [1/2/3]: "
+set EW_EL=%errorlevel%
+if "%EW_EL%"=="2" set PROFILE=BALANCED
+if "%EW_EL%"=="3" goto :PROFILE_LOOP
+goto :AFTER_EXTREME_WARN
 :AFTER_EXTREME_WARN
 
 :: ---- WINUTIL ----
@@ -315,11 +314,10 @@ echo.
 echo [%time%] [WINUTIL] Launched >> "%LOGFILE%"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm christitus.com/win | iex"
 echo.
-if "%LANG%"=="RO" (set _B=  ENTER = meniu  /  N = Iesire: ) else (set _B=  ENTER = menu  /  N = Exit: )
-set BC=MENU
-set /p BC=%_B%
-set BC=!BC: =!
-if /i "!BC!"=="N" goto :EXIT_SCRIPT
+if "%LANG%"=="RO" (echo   [1] Inapoi la meniu  [2] Iesire) else (echo   [1] Back to menu  [2] Exit)
+echo.
+choice /C 12 /N /M "  Alegere / Choice [1/2]: "
+if errorlevel 2 goto :EXIT_SCRIPT
 set CAME_FROM_MENU=1
 goto :PROFILE_LOOP
 :AFTER_WINUTIL
@@ -334,14 +332,89 @@ echo [%time%] [NINITE] Opened >> "%LOGFILE%"
 start "" "https://ninite.com/"
 if "%LANG%"=="RO" (echo  [OK] Ninite.com deschis in browser.) else (echo  [OK] Ninite.com opened in browser.)
 echo.
-if "%LANG%"=="RO" (set _B=  ENTER = meniu  /  N = Iesire: ) else (set _B=  ENTER = menu  /  N = Exit: )
-set BC=MENU
-set /p BC=%_B%
-set BC=!BC: =!
-if /i "!BC!"=="N" goto :EXIT_SCRIPT
+if "%LANG%"=="RO" (echo   [1] Inapoi la meniu  [2] Iesire) else (echo   [1] Back to menu  [2] Exit)
+echo.
+choice /C 12 /N /M "  Alegere / Choice [1/2]: "
+if errorlevel 2 goto :EXIT_SCRIPT
 set CAME_FROM_MENU=1
 goto :PROFILE_LOOP
 :AFTER_NINITE
+
+:: ---- ACTIVATE ----
+if not "%PROFILE%"=="ACTIVATE" goto :AFTER_ACTIVATE
+cls
+call :HEADER
+echo.
+if "%LANG%"=="RO" (
+    echo  ============================================================
+    echo   ^^!^^! ATENTIE - COD REMOTE / FOLOSIRE PE PROPRIA RASPUNDERE ^^!^^!
+    echo  ============================================================
+    echo.
+    echo   Aceasta optiune descarca si executa un script direct de pe
+    echo   internet ^(https://get.activated.win^) intr-o fereastra
+    echo   PowerShell separata.
+    echo.
+    echo   Prin continuare, confirmi ca:
+    echo     - Intelegi ca rulezi cod descarcat de pe internet
+    echo     - Accepti responsabilitatea pentru utilizarea acestui tool
+    echo     - RunGuard nu este afiliat cu Microsoft Activation Scripts
+    echo     - Folosesti aceasta functie pe propria raspundere
+    echo.
+    echo   Sursa: https://github.com/massgravel/Microsoft-Activation-Scripts
+    echo.
+    echo  ============================================================
+    echo   Apasa Y pentru a continua sau orice alta tasta pentru inapoi
+    echo  ============================================================
+) else (
+    echo  ============================================================
+    echo   ^^!^^! WARNING - REMOTE CODE / USE AT YOUR OWN RISK ^^!^^!
+    echo  ============================================================
+    echo.
+    echo   This option downloads and executes a script directly from
+    echo   the internet ^(https://get.activated.win^) in a separate
+    echo   PowerShell window.
+    echo.
+    echo   By continuing, you confirm that:
+    echo     - You understand you are running code downloaded from internet
+    echo     - You accept responsibility for using this tool
+    echo     - RunGuard is not affiliated with Microsoft Activation Scripts
+    echo     - You use this feature at your own risk
+    echo.
+    echo   Source: https://github.com/massgravel/Microsoft-Activation-Scripts
+    echo.
+    echo  ============================================================
+    echo   Press Y to continue or any other key to go back
+    echo  ============================================================
+)
+echo.
+choice /C YN /N /M "  Y / N: "
+if errorlevel 2 (
+    set CAME_FROM_MENU=1
+    goto :PROFILE_LOOP
+)
+cls
+call :HEADER
+echo.
+if "%LANG%"=="RO" (
+    echo  [*] Se lanseaza Microsoft Activation Scripts...
+    echo  [*] Va aparea o fereastra PowerShell cu meniul de activare.
+    echo  [*] Inchide fereastra PowerShell cand ai terminat.
+) else (
+    echo  [*] Launching Microsoft Activation Scripts...
+    echo  [*] A PowerShell window with the activation menu will appear.
+    echo  [*] Close the PowerShell window when done.
+)
+echo.
+echo [%time%] [ACTIVATE] Launched >> "%LOGFILE%"
+start "Microsoft Activation Scripts" powershell.exe -NoProfile -ExecutionPolicy Bypass -NoExit -Command "irm https://get.activated.win | iex"
+echo.
+if "%LANG%"=="RO" (echo   [1] Inapoi la meniu  [2] Iesire) else (echo   [1] Back to menu  [2] Exit)
+echo.
+choice /C 12 /N /M "  Alegere / Choice [1/2]: "
+if errorlevel 2 goto :EXIT_SCRIPT
+set CAME_FROM_MENU=1
+goto :PROFILE_LOOP
+:AFTER_ACTIVATE
 
 :: ============================================================
 :: STEPS ACTIVE PER PROFILE  (1=run, 0=skip)
@@ -374,22 +447,22 @@ cls
 call :HEADER
 echo.
 if "%LANG%"=="RO" (
+    echo  ============================================================
     echo   Scriptul a mai fost rulat pe acest PC.
     echo   %S_ALREADY_RUN%: %PREV_DATE%
     echo.
-    echo   Apasa 1 pentru a rula din nou sau 2 pentru a iesi.
+    echo   Continua automat in 5 secunde sau apasa orice tasta...
+    echo  ============================================================
 ) else (
+    echo  ============================================================
     echo   This script has already been run on this PC.
     echo   %S_ALREADY_RUN%: %PREV_DATE%
     echo.
-    echo   Press 1 to run again or 2 to exit.
+    echo   Continuing automatically in 5 seconds or press any key...
+    echo  ============================================================
 )
 echo.
-set RC=1
-set /p RC=  [1=Da/Yes  2=Exit]:
-set RC=!RC: =!
-if "!RC!"=="2" goto :EXIT_SCRIPT
-if /i "!RC!"=="n" goto :EXIT_SCRIPT
+timeout /t 5 >nul 2>&1
 :SKIP_RERUN
 
 :: ============================================================
@@ -406,8 +479,8 @@ if "%LANG%"=="RO" (
     echo  Recommended: close all apps before continuing.
 )
 echo.
-if "%LANG%"=="RO" (set EM=  Apasa ENTER pentru a incepe...) else (set EM=  Press ENTER to start...)
-set /p D_=%EM%
+if "%LANG%"=="RO" (echo   Apasa orice tasta pentru a incepe...) else (echo   Press any key to start...)
+pause >nul
 
 :: ============================================================
 :: HARDWARE DETECTION
@@ -441,7 +514,7 @@ echo !GPU_NAME! | findstr /i "Intel" >nul 2>&1
 if !errorLevel!==0 set GPU_VENDOR=INTEL
 echo !GPU_NAME! | findstr /i "RTX" >nul 2>&1
 if !errorLevel!==0 set GPU_GEN=MODERN
-echo !GPU_NAME! | findstr /i "RX 5 RX 6 RX 7 RX 9" >nul 2>&1
+echo !GPU_NAME! | findstr /i /C:"RX 55" /C:"RX 56" /C:"RX 57" /C:"RX 6" /C:"RX 7" /C:"RX 9" >nul 2>&1
 if !errorLevel!==0 set GPU_GEN=MODERN
 if "%LANG%"=="RO" (echo  [OK] GPU: !GPU_NAME! -- !GPU_VENDOR! -- Gen: !GPU_GEN!) else (echo  [OK] GPU: !GPU_NAME! -- !GPU_VENDOR! -- Gen: !GPU_GEN!)
 
@@ -508,7 +581,9 @@ set UNDO=%~dp0RunGuard_Restore.bat
 >> "%UNDO%" echo.
 >> "%UNDO%" echo :: CPU throttling defaults
 >> "%UNDO%" echo powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 5 ^>nul 2^>^&1
+>> "%UNDO%" echo powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 ^>nul 2^>^&1
 >> "%UNDO%" echo powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 0 ^>nul 2^>^&1
+>> "%UNDO%" echo powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100 ^>nul 2^>^&1
 >> "%UNDO%" echo powercfg /setactive SCHEME_CURRENT ^>nul 2^>^&1
 >> "%UNDO%" echo echo [OK] CPU throttling restaurat.
 >> "%UNDO%" echo.
@@ -522,7 +597,9 @@ set UNDO=%~dp0RunGuard_Restore.bat
 >> "%UNDO%" echo reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 2 /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v Priority /t REG_DWORD /d 2 /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d Medium /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "SFIO Priority" /t REG_SZ /d Normal /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Background Only" /t REG_SZ /d True /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Clock Rate" /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 20 /f ^>nul 2^>^&1
 >> "%UNDO%" echo echo [OK] GPU registry restaurat.
 >> "%UNDO%" echo.
@@ -623,9 +700,15 @@ set UNDO=%~dp0RunGuard_Restore.bat
 >> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\valorant.exe\PerfOptions" /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\VALORANT-Win64-Shipping.exe\PerfOptions" /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\League_of_Legends.exe\PerfOptions" /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\LeagueClient.exe\PerfOptions" /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\javaw.exe\PerfOptions" /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Minecraft.exe\PerfOptions" /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Warzone.exe\PerfOptions" /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\r5apex.exe\PerfOptions" /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\RainbowSix.exe\PerfOptions" /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\dota2.exe\PerfOptions" /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions" /f ^>nul 2^>^&1
+>> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\overwatch.exe\PerfOptions" /f ^>nul 2^>^&1
 >> "%UNDO%" echo reg delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\overwatch2.exe\PerfOptions" /f ^>nul 2^>^&1
 >> "%UNDO%" echo echo [OK] Game priority IFEO eliminat.
 >> "%UNDO%" echo.
@@ -846,9 +929,9 @@ echo [%time%] [%PROFILE%] Step 12 - RAM >> "%LOGFILE%"
 if "%RUN_13%"=="0" goto :AFTER13
 call :PROGRESS 13 "%S_13%"
 ipconfig /flushdns >nul 2>&1
-del /q /f "%temp%\*" >nul 2>&1
-del /q /f "C:\Windows\Temp\*" >nul 2>&1
-del /q /f "%LOCALAPPDATA%\D3DSCache\*" >nul 2>&1
+del /q /f /s "%temp%\*" >nul 2>&1
+del /q /f /s "C:\Windows\Temp\*" >nul 2>&1
+del /q /f /s "%LOCALAPPDATA%\D3DSCache\*" >nul 2>&1
 powercfg -h off >nul 2>&1
 if "%LANG%"=="RO" (echo  [OK] Disk curatat - DNS flush, temp files, hibernare dezactivata.) else (echo  [OK] Disk cleaned - DNS flush, temp files, hibernation disabled.)
 echo [%time%] [%PROFILE%] Step 13 - Disk >> "%LOGFILE%"
@@ -1254,11 +1337,10 @@ if "%LANG%"=="RO" (
 )
 echo  ============================================================
 echo.
-if "%LANG%"=="RO" (set _B=  ENTER = meniu  /  N = Iesire: ) else (set _B=  ENTER = menu  /  N = Exit: )
-set BC=MENU
-set /p BC=%_B%
-set BC=!BC: =!
-if /i "!BC!"=="N" goto :EXIT_SCRIPT
+if "%LANG%"=="RO" (echo   [1] Inapoi la meniu  [2] Iesire) else (echo   [1] Back to menu  [2] Exit)
+echo.
+choice /C 12 /N /M "  Alegere / Choice [1/2]: "
+if errorlevel 2 goto :EXIT_SCRIPT
 set CAME_FROM_MENU=1
 goto :PROFILE_LOOP
 
